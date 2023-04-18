@@ -122,7 +122,7 @@ private:
         return query_words;
     }
 
-    double revelance_sum(const string& word) const {
+    double RevelanceSum(const string& word) const {
         return log(document_count_ * 1.0 / documents_.at(word).size());
     }
 
@@ -133,7 +133,7 @@ private:
             if (documents_.count(word) == 0) {
                 continue;
             }
-            const double complete_count = revelance_sum(word);
+            const double complete_count = RevelanceSum(word);
             for (const auto [document_id, count_relevance] : documents_.at(word)) {
                 document_to_relevance[document_id] += count_relevance * complete_count;
             }
