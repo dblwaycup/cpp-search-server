@@ -122,7 +122,7 @@ private:
         return query_words;
     }
 
-    double RevelanceSum(const string& word) const {
+    double RevelanceSum(const string& word) const {                    // Забыл что это метод :)
         return log(document_count_ * 1.0 / documents_.at(word).size());
     }
 
