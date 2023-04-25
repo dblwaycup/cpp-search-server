@@ -6,6 +6,7 @@
 #include <string> 
 #include <utility> 
 #include <vector> 
+#include <numeric>
 
 using namespace std;
 
@@ -45,27 +46,31 @@ vector<string> SplitIntoWords(const string& text) {
     return words;
 }
 
+struct Document {
+        int id;
+        double relevance;
+        int rating;
 
+};
 
 class SearchServer {
 public:
-    struct Document {
-        int id;
-        double relevance;
-    };
+    
+
     void SetStopWords(const string& text) {
         for (const string& word : SplitIntoWords(text)) {
             stop_words_.insert(word);
         }
     }
 
-    void AddDocument(int document_id, const string& document) {
+    void AddDocument(int document_id, const string& document, const vector<int>& ratings) {
         ++document_count_;
         const vector<string> words = SplitIntoWordsNoStop(document);
         const double tf_count = 1.0 / words.size();
         for (const string& word : words) {
             documents_[word][document_id] += tf_count;
         }
+        document_ratings_[document_id] = ComputeAverageRating(ratings);
     }
 
     vector<Document> FindTopDocuments(const string& raw_query) const {
@@ -93,6 +98,8 @@ private:
 
     map<string, map<int, double>> documents_;
 
+    map<int, int> document_ratings_;
+
     int document_count_ = 0;
 
     bool IsStopWord(const string& word) const {
@@ -102,7 +109,7 @@ private:
     vector<string> SplitIntoWordsNoStop(const string& text) const {
         vector<string> words;
         for (const string& word : SplitIntoWords(text)) {
-            if (!IsStopWord(word) || !IsStopWord(word.substr(1))) { // Теперь по идее слово с минусом должно проходить проверку на стоп слово //
+            if (!IsStopWord(word) || !IsStopWord(word.substr(1))) { 
                 words.push_back(word);
             }
         }
@@ -112,7 +119,7 @@ private:
     Query ParseQuery(const string& text) const {
         Query query_words;
         for (const string& word : SplitIntoWordsNoStop(text)) {
-            if ((word[0] == '-') && (!IsStopWord(word.substr(1)))) { // Теперь по идее слово с минусом должно проходить проверку на стоп слово //
+            if ((word[0] == '-') && (!IsStopWord(word.substr(1)))) { 
                 query_words.minus_words.insert(word.substr(1));
             }
             else {
@@ -122,19 +129,23 @@ private:
         return query_words;
     }
 
-    double RevelanceSum(const string& word) const {                    // Забыл что это метод :)
+    double RevelanceSum(const string& word) const {                    
         return log(document_count_ * 1.0 / documents_.at(word).size());
     }
 
     vector<Document> FindAllDocuments(const Query& query) const {
         map<int, double> document_to_relevance;
         vector<Document> answer_document;
+        map<int, int> rating_docs;
+        int rating;
         for (const string& word : query.plus_words) {
             if (documents_.count(word) == 0) {
                 continue;
             }
             const double complete_count = RevelanceSum(word);
             for (const auto [document_id, count_relevance] : documents_.at(word)) {
+                rating = document_ratings_.at(document_id);
+                rating_docs.insert({ document_id, rating });
                 document_to_relevance[document_id] += count_relevance * complete_count;
             }
         }
@@ -145,33 +156,50 @@ private:
             }
             for (const auto [document_id, _] : documents_.at(word)) {
                 document_to_relevance.erase(document_id);
+                rating_docs.erase(document_id);
             }
         }
-        for (const auto& [key, value] : document_to_relevance) {
-            answer_document.push_back({ key, value });
+        for (const auto& [document_id, relevance] : document_to_relevance) {
+            answer_document.push_back({document_id, relevance, rating_docs.at(document_id)});
         }
-        return answer_document; // Когда пытался компилировать через VS, он выдал ошибку, что FindAllDocuments должно возвращать перменную //
+        return answer_document; 
     }
-    };
-
-    SearchServer CreateSearchServer() {
-        SearchServer search_server;
-        search_server.SetStopWords(ReadLine());
-
-        const int document_count = ReadLineWithNumber();
-        for (int document_id = 0; document_id < document_count; ++document_id) {
-            search_server.AddDocument(document_id, ReadLine());
+    int ComputeAverageRating(const vector<int>& ratings) {
+        if (ratings.empty()) {
+            return 0;
         }
-
-        return search_server;
-    }
-
-    int main() {
-        const SearchServer search_server = CreateSearchServer();
-
-        const string query = ReadLine();
-        for (const auto& [document_id, relevance] : search_server.FindTopDocuments(query)) {
-            cout << "{ document_id = "s << document_id << ", "
-                << "relevance = "s << relevance << " }"s << endl;
+        int sum = 0;
+        for (const int& num : ratings) {
+            sum += num;
         }
+        return (sum - ratings[0]) / static_cast<int>(ratings.size() - 1);
     }
+};
+
+SearchServer CreateSearchServer() {
+    SearchServer search_server;
+    vector<int> rating;
+    search_server.SetStopWords(ReadLine());
+    string document = ""s;
+
+    const int document_count = ReadLineWithNumber();
+    for (int document_id = 0; document_id < document_count; ++document_id) {
+        document = ReadLine();
+        for (const string& text_rating : SplitIntoWords(ReadLine())) {
+            rating.push_back(stoi(text_rating));
+        }
+        search_server.AddDocument(document_id, document, rating);
+        rating.clear();
+    }
+
+    return search_server;
+}
+
+int main() {
+    const SearchServer search_server = CreateSearchServer();
+
+    const string query = ReadLine();
+    for (const auto& [document_id, relevance, rating] : search_server.FindTopDocuments(query)) {
+        cout << "{ document_id = "s << document_id << ", " << "relevance = "s << relevance << ", "s << "rating = "s << rating << " }"s << endl;
+    }
+}
