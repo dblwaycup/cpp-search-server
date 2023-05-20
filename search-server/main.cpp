@@ -10,7 +10,6 @@
 
 using namespace std;
 
-
 void TestAddDocuments() {
     const int doc_id = 42;
     const string content = "cat in the city"s;
@@ -49,10 +48,14 @@ void TestEliminateMinusWordsFromAddedDocumentContent() {
     const int doc_id = 54;
     const string content = "i love practicum and c++"s;
     const vector<int> ratings = { 5, 5, 5 };
+    const int doc_id1 = 54;
+    const string content1 = "i like practicum and c++"s;
+    const vector<int> ratings1 = { 5, 5, 5 };
     {
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        ASSERT_HINT(server.FindTopDocuments("-love"s).empty(),
+        server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
+        ASSERT_EQUAL_HINT(server.FindTopDocuments("-love like"s).size(), 1,
             "Documents with minus words must be excluded"s);
 
     }
@@ -73,22 +76,36 @@ void TestSortingRel() {
     const int doc_id3 = 45;
     const string content3 = "All i see is you words"s;
     const vector<int> ratings3 = { 2, 3, 4 };
+
+    const int doc_id4 = 42;
+    const string content4 = "Hard to study easy to work"s;
+    const vector<int> ratings4 = { 2, 3, 4 };
+
+    const int doc_id5 = 40;
+    const string content5 = "Drums in this song are very nice"s;
+    const vector<int> ratings5 = { 2, 3, 4 };
+
+    const int doc_id6 = 49;
+    const string content6 = "I love this gutair"s;
+    const vector<int> ratings6 = { 2, 3, 4 };
     {
         SearchServer server;
         server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
         server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings2);
         server.AddDocument(doc_id3, content3, DocumentStatus::ACTUAL, ratings3);
-        //проверяем, что было отобрано только 2 документа из 3-х
-        auto result = server.FindTopDocuments("Eminem slim shady");
-        ASSERT_EQUAL(result.size(), 2);
+        server.AddDocument(doc_id4, content4, DocumentStatus::ACTUAL, ratings4);
+        server.AddDocument(doc_id5, content5, DocumentStatus::ACTUAL, ratings5);
+        server.AddDocument(doc_id6, content6, DocumentStatus::ACTUAL, ratings6);
+        //проверяем, что было отобрано только 4 документа из 6
+        auto result = server.FindTopDocuments("slim shady love nice");
+        ASSERT_EQUAL(result.size(), 4);
         //проверяем, что они находятся в нужной последовательности
         bool isright = true;
         for (size_t i = 0; i < result.size(); i++) {
             if (result[i].relevance < result[i + 1].relevance) {
-                isright = false;
+                ASSERT(isright = false);
             }
         }
-        ASSERT(isright);
     }
 }
 
@@ -100,7 +117,7 @@ void TestCountingRating() {
     const vector<int> ratings1 = { 2, 3, 4 };
     {
         server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
-        ASSERT((server.FindTopDocuments("tikatika slim shady"s))[0].rating == 3);
+        ASSERT((server.FindTopDocuments("tikatika slim shady"s)).at(doc_id1).rating == (2 + 3 + 4) / 3);
 
 
     }
@@ -119,13 +136,18 @@ void TestStatus() {
     const int doc_id3 = 45;
     const string content3 = "All i see is you words"s;
     const vector<int> ratings3 = { 2, 3, 4 };
+
+    const int doc_id4 = 48;
+    const string content4 = "wow it is timati"s;
+    const vector<int> ratings4 = { 2, 3, 4 };
     {
         SearchServer server;
         server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
         server.AddDocument(doc_id2, content2, DocumentStatus::BANNED, ratings2);
         server.AddDocument(doc_id3, content3, DocumentStatus::ACTUAL, ratings3);
+        server.AddDocument(doc_id4, content4, DocumentStatus::ACTUAL, ratings4);
 
-        ASSERT((server.FindTopDocuments("wow it is timati"s, DocumentStatus::BANNED)).empty());
+        ASSERT_EQUAL((server.FindTopDocuments("wow it is timati"s, DocumentStatus::BANNED)).size(), 1);
     }
 }
 /*
@@ -136,7 +158,6 @@ void TestStatus() {
 
 // Функция TestSearchServer является точкой входа для запуска тестов
 void TestSearchServer() {
-    RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     RUN_TEST(TestAddDocuments);
     RUN_TEST(TestEliminateMinusWordsFromAddedDocumentContent);
@@ -152,4 +173,6 @@ void TestSearchServer() {
 
 int main() {
     TestSearchServer();
-    // Если вы видите эту строку, значит все тесты 
+    // Если вы видите эту строку, значит все тесты прошли успешно
+    cout << "Search server testing finished"s << endl;
+}
