@@ -1,15 +1,3 @@
-#include <algorithm>
-#include <cmath>
-#include <map>
-#include <set>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "search_server.h"
-
-using namespace std;
-
 void TestAddDocuments() {
     const int doc_id = 42;
     const string content = "cat in the city"s;
@@ -48,16 +36,20 @@ void TestEliminateMinusWordsFromAddedDocumentContent() {
     const int doc_id = 54;
     const string content = "i love practicum and c++"s;
     const vector<int> ratings = { 5, 5, 5 };
-    const int doc_id1 = 54;
+    const int doc_id1 = 55;
     const string content1 = "i like practicum and c++"s;
     const vector<int> ratings1 = { 5, 5, 5 };
+    const int doc_id2 = 56;
+    const string content2 = "like practicum c++"s;
+    const vector<int> ratings2 = { 6, 5, 7 };
     {
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
         server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
+        server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings2);
         ASSERT_EQUAL_HINT(server.FindTopDocuments("-love like"s).size(), 1,
             "Documents with minus words must be excluded"s);
-
+        ASSERT_EQUAL((server.FindTopDocuments("-love like"s))[0].id, 56);
     }
 
 }
@@ -100,11 +92,8 @@ void TestSortingRel() {
         auto result = server.FindTopDocuments("slim shady love nice");
         ASSERT_EQUAL(result.size(), 4);
         //проверяем, что они находятся в нужной последовательности
-        bool isright = true;
         for (size_t i = 0; i < result.size(); i++) {
-            if (result[i].relevance < result[i + 1].relevance) {
-                ASSERT(isright = false);
-            }
+            ASSERT(result[i].relevance < result[i + 1].relevance);
         }
     }
 }
