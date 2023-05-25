@@ -1,6 +1,4 @@
-    // Я не знаю, как сделать тест корректного вычисления релевантности.
-    // Если преполагается, что будет проверятся сама сумма у документа, то для этого нужно перековырять половину основного тела кода.
-    // Потому что там идёт постоянное обращение и взаимодействие с приватным полем, которое заполняется данными.
+//////////////////////////////// ТЕСТЫ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 void TestAddDocuments() {
     const int doc_id = 42;
@@ -100,6 +98,7 @@ void TestSortingRel() {
             ASSERT(result[i].relevance < result[i + 1].relevance);
         }
     }
+    
 }
 
 //Проверка правильности подсчёта рейтинга
@@ -114,6 +113,31 @@ void TestCountingRating() {
 
 
     }
+}
+
+void TestVerifyRelevance() {
+    const int doc_id1 = 12;
+    const string content1 = "hi my name is tikatika slim shady";
+    const vector<int> ratings1 = { 2, 3, 4 };
+
+    const int doc_id2 = 90;
+    const string content2 = "slim shady has become eminem after his most popular album"s;
+    const vector<int> ratings2 = { 2, 3, 4 };
+
+    {
+        SearchServer server;
+        server.AddDocument(doc_id1, content1, DocumentStatus::ACTUAL, ratings1);
+        server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings2);
+
+        double value = (log(server.GetDocumentCount() * 1.0 / 1)) * (1.0 / 7);
+        //кол-во документов умножаем на 1.0 и превращаем в double и... //
+        // делим на 1(кол-во совпадений слова по всем документам) //
+        // 1.0 делим на (общее кол-во слов в одном документе, в котором есть это слово) //
+        // перемножаем //
+        ASSERT_EQUAL_HINT((server.FindTopDocuments("name"s)).at(doc_id1).relevance, value, 
+            "Relevance calculated incorrectly"s);
+    }
+
 }
 
 //проверка поиска по определенному статусу
@@ -147,19 +171,15 @@ void TestStatus() {
 Разместите код остальных тестов здесь
 */
 
-
-
 // Функция TestSearchServer является точкой входа для запуска тестов
 void TestSearchServer() {
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     RUN_TEST(TestAddDocuments);
     RUN_TEST(TestEliminateMinusWordsFromAddedDocumentContent);
     RUN_TEST(TestCountingRating);
+    RUN_TEST(TestVerifyRelevance);
     RUN_TEST(TestSortingRel);
     RUN_TEST(TestStatus);
-    // Я не знаю, как сделать тест корректного вычисления релевантности.
-    // Если преполагается, что будет проверятся сама сумма у документа, то для этого нужно перековырять половину основного тела кода.
-    // Потому что там идёт постоянное обращение и взаимодействие с приватным полем, которое заполняется данными.
     // Не забудьте вызывать остальные тесты здесь
 }
 
