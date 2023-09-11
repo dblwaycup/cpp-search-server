@@ -1,6 +1,7 @@
-#include "pch.h"
 #include "search_server.h"
 #include <math.h>
+#include <numeric>
+
 void SearchServer::AddDocument(int document_id, const std::string& document, DocumentStatus status,
     const std::vector<int>& ratings) {
     if ((document_id < 0) || (documents_.count(document_id) > 0)) {
@@ -122,14 +123,10 @@ int SearchServer::ComputeAverageRating(const std::vector<int>& ratings) {
         return 0;
     }
     int rating_sum = 0;
-    for (const int rating : ratings) {
-        rating_sum += rating;
-    }
+        rating_sum += std::accumulate(ratings.begin(), ratings.end(), 0);
     return rating_sum / static_cast<int>(ratings.size());
 }
 
 double SearchServer::ComputeWordInverseDocumentFreq(const std::string& word) const {
     return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
 }
-
-
