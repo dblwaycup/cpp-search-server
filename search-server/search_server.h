@@ -9,7 +9,7 @@
 #include <algorithm>
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
-const double MAGIC_VALUE = 1e-6;
+const double PRECISION = 1e-6;
 
 class SearchServer {
 public:
@@ -73,41 +73,25 @@ private:
     public:  // Для лучше читаемости, я отделил шаблонные методы от обычных. //
 
     template <typename StringContainer>
-    explicit SearchServer(const StringContainer& stop_words)
-        : stop_words_(MakeUniqueNonEmptyStrings(stop_words))  // Extract non-empty stop words
-    {
-        if (!all_of(stop_words_.begin(), stop_words_.end(), IsValidWord)) {
-            throw std::invalid_argument(std::string("Some of stop words are invalid"));
-        }
-    }
+    explicit SearchServer(const StringContainer& stop_words);
 
     template <typename DocumentPredicate>
     std::vector<Document> FindTopDocuments(const std::string& raw_query,
-        DocumentPredicate document_predicate) const {
-        const auto query = ParseQuery(raw_query);
-
-        auto matched_documents = FindAllDocuments(query, document_predicate);
-
-        sort(matched_documents.begin(), matched_documents.end(),
-            [](const Document& lhs, const Document& rhs) {
-                if (abs(lhs.relevance - rhs.relevance) < MAGIC_VALUE) {
-                    return lhs.rating > rhs.rating;
-                }
-                else {
-                    return lhs.relevance > rhs.relevance;
-                }
-            });
-        if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
-            matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
-        }
-
-        return matched_documents;
-    }
+        DocumentPredicate document_predicate) const;
 
     private:
-
+    
     template <typename DocumentPredicate>
-    std::vector<Document> FindAllDocuments(const Query& query,
+     std::vector<Document> FindAllDocuments(const Query& query,
+        DocumentPredicate document_predicate) const;
+    
+
+};
+
+// Вынесенные шаблонные методы ниже.
+
+template <typename DocumentPredicate>
+     std::vector<Document> SearchServer::FindAllDocuments(const Query& query,
         DocumentPredicate document_predicate) const {
         std::map<int, double> document_to_relevance;
         for (const std::string& word : query.plus_words) {
@@ -140,4 +124,34 @@ private:
         return matched_documents;
     }
 
-};
+    template <typename DocumentPredicate>
+    std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query,
+        DocumentPredicate document_predicate) const {
+        const auto query = ParseQuery(raw_query);
+
+        auto matched_documents = FindAllDocuments(query, document_predicate);
+
+        sort(matched_documents.begin(), matched_documents.end(),
+            [](const Document& lhs, const Document& rhs) {
+                if (abs(lhs.relevance - rhs.relevance) < PRECISION) {
+                    return lhs.rating > rhs.rating;
+                }
+                else {
+                    return lhs.relevance > rhs.relevance;
+                }
+            });
+        if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
+            matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
+        }
+
+        return matched_documents;
+    }
+
+    template <typename StringContainer>
+    SearchServer::SearchServer(const StringContainer& stop_words)
+        : stop_words_(MakeUniqueNonEmptyStrings(stop_words))  // Extract non-empty stop words
+    {
+        if (!all_of(stop_words_.begin(), stop_words_.end(), IsValidWord)) {
+            throw std::invalid_argument(std::string("Some of stop words are invalid"));
+        }
+    }
