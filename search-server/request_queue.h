@@ -27,10 +27,15 @@ private:
     public:
 
     template <typename DocumentPredicate>
-    std::vector<Document> AddFindRequest(const std::string& raw_query, DocumentPredicate document_predicate)
+    std::vector<Document> AddFindRequest(const std::string& raw_query, DocumentPredicate document_predicate);
+};
+
+// Вынесенный шаблонный метод класса ниже.
+
+template <typename DocumentPredicate>
+    std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query, DocumentPredicate document_predicate)
     {
         std::vector<Document> result = server_.FindTopDocuments(raw_query, document_predicate);
         AddRequest(static_cast<int>(result.size()));
         return result;
     }
-};
