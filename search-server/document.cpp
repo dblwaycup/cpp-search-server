@@ -1,10 +1,13 @@
-#include "pch.h"
 #include "document.h"
+#include "paginator.h"
+#include <iostream>
 
+using namespace std;
 
-
-std::ostream& operator<<(std::ostream& out, const Document& doc)
-{
-    out << std::string("{ document_id = ") << doc.id << std::string(", relevance = ") << doc.relevance << std::string(", rating = ") << doc.rating << std::string(" }");
-    return out;
+ostream& operator<<(ostream& output, Document document) {
+    output << "{ "s
+        << "document_id = "s << document.id << ", "s
+        << "relevance = "s << document.relevance << ", "s
+        << "rating = "s << document.rating << " }"s;
+    return output;
 }

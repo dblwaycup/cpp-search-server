@@ -1,8 +1,5 @@
 #pragma once
-#include <iostream>
-#include <string>
-#include <vector>
-
+#include "paginator.h"
 
 struct Document {
     Document() = default;
@@ -25,4 +22,4 @@ enum class DocumentStatus {
     REMOVED,
 };
 
-std::ostream& operator<<(std::ostream& out, const Document& doc);
+std::ostream& operator<<(std::ostream& output, Document document);

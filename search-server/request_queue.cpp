@@ -1,42 +1,33 @@
-#include "pch.h"
 #include "request_queue.h"
 
-RequestQueue::RequestQueue(const SearchServer& search_server) : requests_({}), server_(search_server), current_time(0), no_result_count(0)
-{
-}
-
-std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query, DocumentStatus status)
-{
-    std::vector<Document> result = server_.FindTopDocuments(raw_query, status);
-    auto size = result.size();
-    AddRequest(static_cast<int>(size));
-    return result;
-}
-std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query)
-{
-    std::vector<Document> result = server_.FindTopDocuments(raw_query);
-    auto size = result.size();
-    AddRequest(static_cast<int>(size));
-    return result;
-}
 int RequestQueue::GetNoResultRequests() const {
-    return no_result_count;
+    return minute_in_query;
 }
-void RequestQueue::AddRequest(int result_size)
-{
-    ++current_time;
-    if (!requests_.empty() && current_time > min_in_day_)
-    {
-        if (requests_.front().no_result == 0)
-        {
-            --no_result_count;
 
-        }
+
+
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query, DocumentStatus status) {
+    auto result = server_.FindTopDocuments(raw_query, status);
+    if (result.empty()) {
+        ++minute_in_query; // кол-во пустых запросов 
+    }
+    requests_.push_back({ raw_query,result }); // requests_.size()-кол-во всех запросов 
+    while (requests_.size() > min_in_day_) {
         requests_.pop_front();
+        --minute_in_query;
     }
-    requests_.push_back({ result_size });
-    if (result_size == 0)
-    {
-        ++no_result_count;
+    return result;
+}
+
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query) {
+    auto result = server_.FindTopDocuments(raw_query);
+    if (result.empty()) {
+        ++minute_in_query; // кол-во пустых запросов 
     }
+    requests_.push_back({ raw_query,result }); // requests_.size()-кол-во всех запросов 
+    while (requests_.size() > min_in_day_) {
+        requests_.pop_front();
+        --minute_in_query;
+    }
+    return result;
 }
