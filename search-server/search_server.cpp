@@ -140,7 +140,8 @@ std::set<int>::iterator SearchServer::end() const {
 }
 
 const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const {
-    return get_document_freqs.at(document_id);
+    static const std::map<std::string, double> emptyes;
+    return (!get_document_freqs.count(document_id)) ? emptyes : get_document_freqs.at(document_id);
 }
 
 void SearchServer::RemoveDocument(int document_id) {
@@ -151,7 +152,8 @@ void SearchServer::RemoveDocument(int document_id) {
 
     auto it = get_document_freqs.find(document_id); // it - итератор на int который надо удалить
 
-    for (auto& k : (*it).second) word_to_document_freqs_.at(k.first).erase(document_id); // удаление из word_to_document_freqs_ (поиск по string)
+    for (auto& word : (*it).second) 
+    word_to_document_freqs_.at(word.first).erase(document_id); // удаление из word_to_document_freqs_ (поиск по string)
         
     this->get_document_freqs.erase(it); // удаление из get_document_freqs (поиск по id)
 }
